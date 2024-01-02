@@ -1,4 +1,5 @@
-// const launches = require('./launches.mongo');
+const launchesDatabase = require('./launches.mongo');
+const planets = require('./planets.mongo');
 
 const launches = new Map();
 
@@ -9,20 +10,38 @@ const launch = {
     mission: 'Kepler Exploration X',
     rocket: 'Explorer IS1',
     launchDate: new Date('December 27, 2020'),
-    target: 'Kepler-442 b',
+    target: 'Adams Home Planet',
     customers: ['ZTM', 'NASA'],
     upcoming: true,
     success: true
 };
+saveLunch(launch);
 
-launches.set(launch.flightNumber, launch);
+async function saveLunch(launch) {
+    const planet = await planets.findOne({
+        keplerName: launch.target,
+
+    });
+
+    if(!planet) {
+        throw new Error('No planet match found');
+    }
+
+    await launchesDatabase.updateOne({
+        flightNumber: launch.flightNumber,
+    }, launch, {
+        upsert: true,
+    })
+}
 
 function existLaunchWithId(launchId) {
     return launches.has(launchId);
 }
 
-function getAllLaunches() {
-    return Array.from(launches.values());
+async function getAllLaunches() {
+    return await launchesDatabase.find({} ,{
+        '__id': 0, '__v': 0
+    });
 }
 
 function addNewLaunch() {
